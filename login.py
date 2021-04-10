@@ -1,8 +1,7 @@
 from tkinter import *
 from PIL import ImageTk
-from dashBoard import Face_Recognition_System
 from tkinter import messagebox
-
+from dashBoard import Face_Recognition_System
 
 class Login:
     def __init__(self, root):
@@ -37,7 +36,7 @@ class Login:
     def login_function(self):
         if self.txt_pass.get()=="" or self.txt_user.get()=="":
             messagebox.showerror("Error", "All fields are required", parent=self.root)
-        elif self.txt_pass.get()!="123456" or self.txt_user.get()!="Madhav":
+        elif self.txt_pass.get()!="123456" or self.txt_user.get()!="madhav":
             messagebox.showerror("Error","Invalid Username/Password",parent=self.root)
         else:
             self.new_window = Toplevel(self.root)

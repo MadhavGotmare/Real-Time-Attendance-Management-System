@@ -10,7 +10,6 @@ import ssl
 import cv2
 
 
-
 class Student:
     def __init__(self, root):
         self.root = root
@@ -201,18 +200,20 @@ class Student:
         search_label = Label(search_frame, text="Search By:", font=("times new roman", 12, "bold"), bg="#eb0c46", fg="white")
         search_label.grid(row=0, column=0, padx=8, pady=6, sticky=W)
 
-        search_combo = ttk.Combobox(search_frame, font=("times new roman", 11, "bold"), width=12, state="read only")
-        search_combo['values'] = ("Select", "College_UID", "Roll_No", "Name")
+        self.var_combo_search = StringVar()
+        search_combo = ttk.Combobox(search_frame, textvariable=self.var_combo_search, font=("times new roman", 11, "bold"), width=12, state="read only")
+        search_combo['values'] = ("Select Option", "College_UID", "Roll_No", "Name")
         search_combo.current(0)
         search_combo.grid(row=0, column=1, padx=2, pady=10, sticky=W)
 
-        search_entry = ttk.Entry(search_frame, width=16, font=("times new roman", 11, "bold"))
+        self.var_search = StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=self.var_search, width=16, font=("times new roman", 11, "bold"))
         search_entry.grid(row=0, column=2, padx=8, pady=6, sticky=W)
 
-        search_btn = Button(search_frame, cursor="hand2", text="Search", width=10, fg="white", bg="#3ebca0", font=("Rockwell", 10, "bold"))
+        search_btn = Button(search_frame, command=self.search_data, cursor="hand2", text="Search", width=10, fg="white", bg="#3ebca0", font=("Rockwell", 10, "bold"))
         search_btn.grid(row=0, column=3, padx=4)
 
-        showALL_btn = Button(search_frame, cursor="hand2", text="Show All", width=10, fg="white", bg="#3ebca0", font=("Rockwell", 10, "bold"))
+        showALL_btn = Button(search_frame, command=self.fetch_data, cursor="hand2", text="Show All", width=10, fg="white", bg="#3ebca0", font=("Rockwell", 10, "bold"))
         showALL_btn.grid(row=0, column=4, padx=4)
 
         # =====Table Frame======
@@ -332,6 +333,7 @@ class Student:
         self.var_collegeUID.set(data[12]),
         self.var_radio1.set(data[13])
 
+
     # =====update function=====
     def update_data(self):
         if self.var_dep.get() == "Select Department" or self.var_name.get() == "" or self.var_userID.get() == "":
@@ -413,6 +415,7 @@ class Student:
 
     # =====generate data set or take photo samples=====
     def take_photo(self):
+        user = self.var_userID.get()
         if self.var_dep.get() == "Select Department" or self.var_name.get() == "" or self.var_userID.get() == "":
             messagebox.showerror("Error!", "All fields are required", parent=self.root)
         else:
@@ -475,10 +478,8 @@ class Student:
                     if len(coords)==4:
                         # ===== updating region of interest by cropping image=====
                         roi_img = img[coords[1]:coords[1]+coords[3], coords[0]:coords[0]+coords[2]]
-                        # =====assign unique id to each image unique=====
-                        user_id = 1
-                        # =====img_id to make the name of each image unique=====
-                        generate_dataset(roi_img, user_id, img_id)
+
+                        generate_dataset(roi_img, user, img_id)
                     return img
 
                 # =====Loading classifiers=====
@@ -526,6 +527,28 @@ class Student:
 
             except Exception as es:
                 messagebox.showerror("Error", f"Due To:{str(es)}", parent=self.root)
+
+
+    # =====search data=====
+    def search_data(self):
+        if self.var_combo_search.get()=="" or self.var_search.get()=="Select Option":
+            messagebox.showerror("Error", "Please Select Option", parent=self.root)
+        else:
+            try:
+                conn = mysql.connector.connect(host="localhost", username="root", password="", database="college_data")
+                my_cursor = conn.cursor()
+                my_cursor.execute("select * from student where " +str(self.var_combo_search.get())+" LIKE '%"+str(self.var_search.get())+"%'")
+                rows = my_cursor.fetchall()
+                if len(rows) != 0:
+                    self.personal_details_table.delete(*self.personal_details_table.get_children())
+                    for i in rows:
+                        self.personal_details_table.insert("", END, values=i)
+                    if rows == None:
+                        messagebox.showerror("Error", "Data Not Found", parent=self.root)
+                        conn.commit()
+                conn.close()
+            except Exception as es:
+                messagebox.showerror("Error", f"Due To :{str(es)}", parent=self.root)
 
 
 root = Tk()

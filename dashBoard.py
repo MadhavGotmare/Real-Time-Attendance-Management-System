@@ -26,7 +26,7 @@ class Face_Recognition_System:
         Attendance_btn = Button(self.root, command=self.attendance, cursor="hand2", text="Take Attendance", fg="white", bg="#3ebca0", font=("Rockwell", 15)).place(x=210, y=340, width=180, height=40)
         Register_btn = Button(self.root, command=self.personal_details, cursor="hand2", text="Registration", fg="white", bg="#3ebca0", font=("Rockwell", 15)).place(x=500, y=340, width=180, height=40)
         Train_btn = Button(self.root, command=self.train_classifer, cursor="hand2", text="Train Image", fg="white", bg="#3ebca0", font=("Rockwell", 15)).place(x=815, y=340, width=180, height=40)
-        Detection_btn = Button(self.root, cursor="hand2", text="Face Detection", fg="white", bg="#3ebca0", font=("Rockwell", 15)).place(x=355, y=515, width=180, height=40)
+        Detection_btn = Button(self.root, command=self.face_detection, cursor="hand2", text="Face Detection", fg="white", bg="#3ebca0", font=("Rockwell", 15)).place(x=355, y=515, width=180, height=40)
         CheckAttendance_btn = Button(self.root, command=self.Attendance_data, cursor="hand2", text="Check Attendance", fg="white", bg="#3ebca0", font=("Rockwell", 15)).place(x=675, y=515, width=185, height=40)
 
 
@@ -186,6 +186,72 @@ class Face_Recognition_System:
                 break
 
         # =====Destroying output window=====
+        cv2.destroyAllWindows()
+
+    # =====face detection=====
+    def face_detection(self):
+        # Method to draw boundary around the detected feature
+        def draw_boundary(img, classifier, scaleFactor, minNeighbors, color, text):
+            # Converting image to gray-scale
+            gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            # detecting features in gray-scale image, returns coordinates, width and height of features
+            features = classifier.detectMultiScale(gray_img, scaleFactor, minNeighbors)
+            coords = []
+            # drawing rectangle around the feature and labeling it
+            for (x, y, w, h) in features:
+                cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
+                cv2.putText(img, text, (x, y - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 1, cv2.LINE_AA)
+                coords = [x, y, w, h]
+            return coords
+
+        # Method to detect the features
+        def detect(img, faceCascade, eyeCascade, noseCascade, mouthCascade):
+            color = {"blue": (255, 0, 0), "red": (0, 0, 255), "green": (0, 255, 0), "white": (255, 255, 255)}
+            coords = draw_boundary(img, faceCascade, 1.1, 10, color['blue'], "Face")
+
+            # If feature is detected, the draw_boundary method will return the x,y coordinates and width and height of rectangle else the length of coords will be 0
+            if len(coords) == 4:
+                # Updating region of interest by cropping image
+                roi_img = img[coords[1]:coords[1] + coords[3], coords[0]:coords[0] + coords[2]]
+                # Passing roi, classifier, scaling factor, Minimum neighbours, color, label text
+                coords = draw_boundary(roi_img, eyeCascade, 1.1, 12, color['red'], "Eye")
+                coords = draw_boundary(roi_img, noseCascade, 1.1, 4, color['green'], "Nose")
+                coords = draw_boundary(roi_img, mouthCascade, 1.1, 20, color['white'], "Mouth")
+            return img
+
+        # Loading classifiers
+        faceCascade = cv2.CascadeClassifier('haarcascade_files/haarcascade_frontalface_default.xml')
+        eyesCascade = cv2.CascadeClassifier('haarcascade_files/haarcascade_eye.xml')
+        noseCascade = cv2.CascadeClassifier('haarcascade_files/Nariz.xml')
+        mouthCascade = cv2.CascadeClassifier('haarcascade_files/Mouth.xml')
+
+        # Capturing real time video stream. 0 for built-in web-cams, 0 or -1 for external web-cams
+        # ctx = ssl.create_default_context()
+        # ctx.check_hostname = False
+        # ctx.verify_mode = ssl.CERT_NONE
+
+        # url = "http://192.168.0.182:8080/shot.jpg"
+        # Remove this code if using external camera
+        video_capture = cv2.VideoCapture(0)
+
+        while True:
+            # Reading image from video stream
+            # img_resp = requests.get(url)
+            # imgNp = np.array(bytearray(img_resp.content), dtype=np.uint8)
+            # img = cv2.imdecode(imgNp, -1)
+            # cv2.imshow('Android Cam', img)
+
+            # Remove this code if using external camera
+            _, img = video_capture.read()
+
+            # Call method we defined above
+            img = detect(img, faceCascade, eyesCascade, noseCascade, mouthCascade)
+            # Writing processed image in a new window
+            cv2.imshow("face detection", img)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        # Destroying output window
         cv2.destroyAllWindows()
 
 
